@@ -1,0 +1,36 @@
+own_data = st.sidebar.checkbox('Do you have any data ?')
+if own_data:
+    userData = prepare_info()
+    data = data.append(userData, ignore_index=True)
+    st.write('### Input Data', userData)
+
+def prepare_info():
+    gender = st.radio("What's your gender ?",
+                      ('Male', 'Female', 'Other'))
+    age = st.slider("age", 16, 100, 16)
+    hypertension = st.radio("hypertension ", (0, 1))
+    heart_disease = st.radio("heart_disease ", (0, 1))
+    ever_married = st.radio("ever_married ", ("No", "Yes"))
+    work_type = st.radio(
+        "work_type ", ("Private", "Self-employed ", "children", "Never_worked"))
+    Residence_type = st.radio("Residence_type ", ("Urban", "Rural"))
+    avg_glucose_level = st.slider("avg_glucose_level ", 50, 250, 50)
+    bmi = st.slider("bmi ", 15, 40, 15)
+    smoking_status = st.radio(
+        "smoking_status ", ("never smoked", "Unknown", "formerly smoked", "smokes"))
+
+    info = {
+        "id": 99999,
+        "gender": gender,
+        "age": age,
+        "hypertension": hypertension,
+        "heart_disease": heart_disease,
+        "ever_married": ever_married,
+        "work_type": work_type,
+        "Residence_type": Residence_type,
+        "avg_glucose_level": avg_glucose_level,
+        "bmi": bmi,
+        "smoking_status": smoking_status
+    }
+    init_info = pd.DataFrame(info, index=[0])
+    return init_info

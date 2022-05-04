@@ -1,3 +1,5 @@
+import plotly.express as px
+from streamlit_echarts import st_echarts
 from sklearn.metrics import precision_score, recall_score
 from sklearn.metrics import plot_confusion_matrix, plot_roc_curve, plot_precision_recall_curve
 from sklearn.metrics import ConfusionMatrixDisplay
@@ -10,47 +12,18 @@ import numpy as np
 import pickle
 import warnings
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import plotly.graph_objects as go
 warnings.filterwarnings('ignore')
 
 
 model_dtree = pickle.load(open('./treemodel.sav', 'rb'))
 model_knn = pickle.load(open('./knn_model.sav', 'rb'))
 model_rfr = pickle.load(open('./rfr_model.sav', 'rb'))
-st.sidebar.header('prpare data')
+
+
+st.sidebar.header('Stroke Classification Web App')
 st.title('Stroke Classification Web App')
-st.write('>  Develope By : Sarayut Aree , Aphisit Thupsaeng')
-
-
-def prepare_info():
-    gender = st.sidebar.radio("What's your gender ?",
-                              ('Male', 'Female', 'Other'))
-    age = st.sidebar.slider("age", 16, 100, 16)
-    hypertension = st.sidebar.radio("hypertension ", (0, 1))
-    heart_disease = st.sidebar.radio("heart_disease ", (0, 1))
-    ever_married = st.sidebar.radio("ever_married ", ("No", "Yes"))
-    work_type = st.sidebar.radio(
-        "work_type ", ("Private", "Self-employed ", "children", "Never_worked"))
-    Residence_type = st.sidebar.radio("Residence_type ", ("Urban", "Rural"))
-    avg_glucose_level = st.sidebar.slider("avg_glucose_level ", 50, 250, 50)
-    bmi = st.sidebar.slider("bmi ", 15, 40, 15)
-    smoking_status = st.sidebar.radio(
-        "smoking_status ", ("never smoked", "Unknown", "formerly smoked", "smokes"))
-
-    info = {
-        "id": 99999,
-        "gender": gender,
-        "age": age,
-        "hypertension": hypertension,
-        "heart_disease": heart_disease,
-        "ever_married": ever_married,
-        "work_type": work_type,
-        "Residence_type": Residence_type,
-        "avg_glucose_level": avg_glucose_level,
-        "bmi": bmi,
-        "smoking_status": smoking_status
-    }
-    init_info = pd.DataFrame(info, index=[0])
-    return init_info
+st.write('>  Developed By : Sarayut Aree , Aphisit Thupsaeng')
 
 
 def label_encoding(df):
@@ -62,15 +35,13 @@ def label_encoding(df):
     df['smoking_status'] = le.fit_transform(df['smoking_status'])
     return df
 
-#userData = prepare_info()
-##data = data.append(userData, ignore_index=True)
-# st.write('### Input Data', userData)
-
 
 data = pd.read_csv("./healthcare-dataset-stroke-data.csv")
+data = data.sample(frac=1)
 data.bmi.replace(to_replace=np.nan, value=data.bmi.mean(), inplace=True)
+st.write('### Full Dataset', data)
 
-st.sidebar.write('### Full Dataset', data)
+# -------------------------- เลือก model ที่ใช้ทำนาย
 st.sidebar.subheader("Choose Classifier")
 model_selected = st.sidebar.selectbox(
     "Classifier", ("K-Nearest Neighbors (KNN)", "Random Forest (RF)", "Decision Tree"))
@@ -80,24 +51,77 @@ elif model_selected == "Decision Tree":
     model = model_dtree
 elif model_selected == "K-Nearest Neighbors (KNN)":
     model = model_knn
-selected_indices = st.sidebar.multiselect('Select rows:', data.index)
 
-selection_row = data.loc[selected_indices]
-input = data.loc[selected_indices].iloc[:, 1:-1]
-target = data.loc[selected_indices].iloc[:, -1]
-st.write('### Selecting Row : ', len(selected_indices), selection_row,)
 
-# MODEL SECTION
-if selected_indices:
+# -------------------------- เลือกว่าจะเอา input เข้าแบบไหน
+st.sidebar.subheader("Choose input option for select data ")
+input_option = st.sidebar.radio(
+    "input option", ("Range of data", "Rows Selecting"))
+st.sidebar.subheader("Select rows ")
+if input_option == "Rows Selecting":
+    selected_indices = st.sidebar.multiselect('Select rows:', data.index)
+    selection_row = data.loc[selected_indices]
+    input = selection_row.loc[selected_indices].iloc[:, 1:-1]
+    target = selection_row.loc[selected_indices].iloc[:, -1]
+else:
+    option_values = st.sidebar.slider(
+        'Select a range of values',
+        0, len(data), (460, 785))
+    selection_row = data.iloc[option_values[0]:option_values[1]]
+    input = selection_row.iloc[:, 1:-1]
+    target = selection_row.iloc[:, -1]
+
+# -------------------------- เลือกว่าจะ plot อะไรบ้าง
+visuailize = st.sidebar.multiselect(
+    "What insight to plot?", ('Gender', "Work Type", "Smoking Status"))
+
+if len(input) > 0:
     encode_df = label_encoding(input)
     prediction = model.predict(encode_df)
+    accuracy = accuracy_score(target, prediction).round(2) * 100
+    precision = precision_score(target, prediction).round(2) * 100
+    recall = recall_score(target, prediction).round(2) * 100
+    st.write('### Selecting Row : ', len(selection_row), selection_row)
 
-    st.subheader("Model Evaluation")
-    st.write("Accuracy : ", accuracy_score(target, prediction).round(2))
-    st.write("Precision : ", precision_score(target, prediction).round(2))
-    st.write("Recall : ", recall_score(target, prediction).round(2))
+    # -------------------------- ส่วนการ plot ต่างๆ
+    if visuailize:
+        for chart in visuailize:
+            if chart == "Gender":
+                st.write('### สัดส่วนเพศของข้อมูลขาเข้า :')
+                gender_plot = go.Figure(data=[go.Pie(
+                    labels=selection_row.gender.value_counts().index.tolist(),
+                    values=selection_row.gender.value_counts().values.tolist())])
+                st.plotly_chart(gender_plot, use_container_width=True)
+            if chart == "Work Type":
+                st.write('### สัดส่วนประเพศที่ทำงานของข้อมูลขาเข้า :')
+                gender_plot = go.Figure(data=[go.Pie(
+                    labels=selection_row.work_type.value_counts().index.tolist(),
+                    values=selection_row.work_type.value_counts().values.tolist())])
+                st.plotly_chart(gender_plot, use_container_width=True)
+            if chart == "Smoking Status":
+                st.write('### สัดส่วนสถานะการสูบบุหรี่ของข้อมูลขาเข้า :')
+                gender_plot = go.Figure(data=[go.Pie(
+                    labels=selection_row.smoking_status.value_counts().index.tolist(),
+                    values=selection_row.smoking_status.value_counts().values.tolist())])
+                st.plotly_chart(gender_plot, use_container_width=True)
+    # -------------------------- ส่วนการ plot การวัดผล
+    barChart = {
+        "xAxis": {
+            "type": "category",
+            "data": ["accuracy",
+                     "precision",
+                     "recall"],
+        },
+        "yAxis": {"type": "value"},
+        "tooltip": {
+            "trigger": "axis",
+            "axisPointer": {"type": "shadow"},
+        },
+        "series": [{"data": [accuracy, precision, recall], "type": "bar"}],
+    }
+    st.write('### การวัดผลการจัดกลุ่ม :')
+    st_echarts(
+        options=barChart, height="600px",
+    )
 
-    st.write('### prediction : ', len(selected_indices), prediction)
-    st.subheader("Confusion Matrix")
-    plot_confusion_matrix(model, input, target, display_labels=["yes", "no"])
-    st.pyplot()
+# MODEL SECTION

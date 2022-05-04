@@ -1,0 +1,3 @@
+- เหลือ powerpoint 
+- การ visualize ต่างๆ (Confution Matrix ด้วย)
+- ละก็ตอน add ข้อมูลของเราแล้วมา predict

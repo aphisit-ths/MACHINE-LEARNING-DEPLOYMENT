@@ -24,3 +24,8 @@ toml==0.10.2
 typing-extensions==4.1.1
 typish==1.9.3
 uvicorn==0.17.6
+prettytable==3.2.0 
+pyecharts==1.9.1 
+simplejson==3.17.6 
+streamlit-echarts==0.4.0
+plotly==5.7.0
