@@ -39,7 +39,7 @@ def label_encoding(df):
 
 
 data = pd.read_csv("./healthcare-dataset-stroke-data.csv")
-data = data.sample(frac=1)
+data = data.sample(frac=1).reset_index(drop=True)
 data.bmi.replace(to_replace=np.nan, value=data.bmi.mean(), inplace=True)
 st.write('### Full Dataset', data)
 
