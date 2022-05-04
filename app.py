@@ -12,6 +12,8 @@ import numpy as np
 import pickle
 import warnings
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 warnings.filterwarnings('ignore')
 
@@ -83,27 +85,6 @@ if len(input) > 0:
     recall = recall_score(target, prediction).round(2) * 100
     st.write('### Selecting Row : ', len(selection_row), selection_row)
 
-    # -------------------------- ส่วนการ plot ต่างๆ
-    if visuailize:
-        for chart in visuailize:
-            if chart == "Gender":
-                st.write('### สัดส่วนเพศของข้อมูลขาเข้า :')
-                gender_plot = go.Figure(data=[go.Pie(
-                    labels=selection_row.gender.value_counts().index.tolist(),
-                    values=selection_row.gender.value_counts().values.tolist())])
-                st.plotly_chart(gender_plot, use_container_width=True)
-            if chart == "Work Type":
-                st.write('### สัดส่วนประเพศที่ทำงานของข้อมูลขาเข้า :')
-                gender_plot = go.Figure(data=[go.Pie(
-                    labels=selection_row.work_type.value_counts().index.tolist(),
-                    values=selection_row.work_type.value_counts().values.tolist())])
-                st.plotly_chart(gender_plot, use_container_width=True)
-            if chart == "Smoking Status":
-                st.write('### สัดส่วนสถานะการสูบบุหรี่ของข้อมูลขาเข้า :')
-                gender_plot = go.Figure(data=[go.Pie(
-                    labels=selection_row.smoking_status.value_counts().index.tolist(),
-                    values=selection_row.smoking_status.value_counts().values.tolist())])
-                st.plotly_chart(gender_plot, use_container_width=True)
     # -------------------------- ส่วนการ plot การวัดผล
     barChart = {
         "xAxis": {
@@ -119,9 +100,88 @@ if len(input) > 0:
         },
         "series": [{"data": [accuracy, precision, recall], "type": "bar"}],
     }
-    st.write('### การวัดผลการจัดกลุ่ม :')
-    st_echarts(
-        options=barChart, height="600px",
-    )
+    st.write('### วัดผลการจัดกลุ่ม :')
+    st.write(" ##### Accuracy:  ", accuracy)
+    st.write(" ##### Precision:  ", precision)
+    st.write(" ##### Recall: ", recall)
 
-# MODEL SECTION
+    # With your data
+    cm = confusion_matrix(target, prediction)
+    st.write('### confusion_matrix :')
+    # Visualizing Confusion Matrix
+    fig = plt.figure(figsize=(8, 5))
+    sns.heatmap(cm, cmap='Blues', annot=True, fmt='d', linewidths=5, cbar=False, annot_kws={'fontsize': 15},
+                yticklabels=['No stroke', 'Stroke'], xticklabels=['Predicted no stroke', 'Predicted stroke'])
+    st.pyplot(fig)
+
+   # -------------------------- ส่วนการ plot ต่างๆ
+    if visuailize:
+        for chart in visuailize:
+            if chart == "Gender":
+                st.write('### สัดส่วนเพศ :')
+                gender_plot = go.Figure(data=[go.Pie(
+                    labels=selection_row.gender.value_counts().index.tolist(),
+                    values=selection_row.gender.value_counts().values.tolist())])
+                st.plotly_chart(gender_plot, use_container_width=True)
+            if chart == "Work Type":
+                st.write('### สัดส่วนประเภทที่ทำงาน :')
+                gender_plot = go.Figure(data=[go.Pie(
+                    labels=selection_row.work_type.value_counts().index.tolist(),
+                    values=selection_row.work_type.value_counts().values.tolist())])
+                st.plotly_chart(gender_plot, use_container_width=True)
+            if chart == "Smoking Status":
+                st.write('### สัดส่วนสถานะการสูบบุหรี่ :')
+                gender_plot = go.Figure(data=[go.Pie(
+                    labels=selection_row.smoking_status.value_counts().index.tolist(),
+                    values=selection_row.smoking_status.value_counts().values.tolist())])
+                st.plotly_chart(gender_plot, use_container_width=True)
+
+# ---------- test your data
+st.header("Do you wanna try with you data ?")
+own_data = st.checkbox('Yes , I do.')
+
+
+def prepare_info():
+    gender = st.radio("What's your gender ?",
+                      ('Male', 'Female', 'Other'))
+    age = st.slider("age", 16, 100, 16)
+    hypertension = st.radio("hypertension ", (0, 1))
+    heart_disease = st.radio("heart_disease ", (0, 1))
+    ever_married = st.radio("ever_married ", ("No", "Yes"))
+    work_type = st.radio(
+        "work_type ", ("Private", "Self-employed ", "children", "Never_worked"))
+    Residence_type = st.radio("Residence_type ", ("Urban", "Rural"))
+    avg_glucose_level = st.slider("avg_glucose_level ", 50, 250, 50)
+    bmi = st.slider("bmi ", 15, 40, 15)
+    smoking_status = st.radio(
+        "smoking_status ", ("never smoked", "Unknown", "formerly smoked", "smokes"))
+
+    info = {
+        "id": 99999,
+        "gender": gender,
+        "age": age,
+        "hypertension": hypertension,
+        "heart_disease": heart_disease,
+        "ever_married": ever_married,
+        "work_type": work_type,
+        "Residence_type": Residence_type,
+        "avg_glucose_level": avg_glucose_level,
+        "bmi": bmi,
+        "smoking_status": smoking_status
+    }
+    init_info = pd.DataFrame(info, index=[0])
+    testdata = data.append(init_info, ignore_index=True)
+    testdata_encode = label_encoding(testdata)
+    return testdata_encode.iloc[-1:, 1:-1]
+
+
+if own_data:
+    userData = prepare_info()
+    st.write('### Input Data', userData)
+    test_prediction = model.predict(userData)
+    isStroke = ""
+    if test_prediction[0] == 1:
+        isStroke = "มีความเสี่ยงเป็น Stroke"
+    else:
+        isStroke = "ไม่พบความเสี่ยง"
+    st.write("## ผลการจัดกลุ่ม : ", isStroke)
