@@ -26,5 +26,5 @@ pyecharts==1.9.1
 simplejson==3.17.6 
 streamlit-echarts==0.4.0
 plotly==5.7.0
-seaborn==0.11.0
-matplotlib==3.5.0
+seaborn==0.11.2
+matplotlib==3.1
