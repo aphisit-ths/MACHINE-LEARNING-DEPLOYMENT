@@ -1,3 +1,4 @@
+from turtle import color
 import plotly.express as px
 from streamlit_echarts import st_echarts
 from sklearn.metrics import precision_score, recall_score
@@ -75,7 +76,11 @@ else:
 
 # -------------------------- เลือกว่าจะ plot อะไรบ้าง
 visuailize = st.sidebar.multiselect(
-    "What insight to plot?", ('Gender', "Work Type", "Smoking Status"))
+    "What insight to plot?", ('Gender',
+                              "Work Type",
+                              "Smoking Status", "BMI",
+                              "Stroke by BMI",
+                              "Stroke by Age"))
 
 if len(input) > 0:
     encode_df = label_encoding(input)
@@ -120,6 +125,7 @@ if len(input) > 0:
             if chart == "Gender":
                 st.write('### สัดส่วนเพศ :')
                 gender_plot = go.Figure(data=[go.Pie(
+
                     labels=selection_row.gender.value_counts().index.tolist(),
                     values=selection_row.gender.value_counts().values.tolist())])
                 st.plotly_chart(gender_plot, use_container_width=True)
@@ -129,12 +135,39 @@ if len(input) > 0:
                     labels=selection_row.work_type.value_counts().index.tolist(),
                     values=selection_row.work_type.value_counts().values.tolist())])
                 st.plotly_chart(gender_plot, use_container_width=True)
+
+            smoking_status_count = selection_row.smoking_status.value_counts()
+            smoking_status_count = pd.DataFrame(smoking_status_count)
             if chart == "Smoking Status":
-                st.write('### สัดส่วนสถานะการสูบบุหรี่ :')
-                gender_plot = go.Figure(data=[go.Pie(
-                    labels=selection_row.smoking_status.value_counts().index.tolist(),
-                    values=selection_row.smoking_status.value_counts().values.tolist())])
-                st.plotly_chart(gender_plot, use_container_width=True)
+                fig = px.bar(smoking_status_count,
+                             x=smoking_status_count.index,
+                             y="smoking_status",
+                             color=smoking_status_count.index)
+                st.plotly_chart(fig, use_container_width=True)
+            if chart == "BMI":
+                fig = plt.figure(figsize=(12, 10))
+                sns.distplot(selection_row.bmi, color='orange',
+                             label='bmi', kde=True)
+                st.pyplot(fig, use_container_width=False)
+            if chart == "Stroke by BMI":
+                fig = plt.figure(figsize=(12, 10))
+                sns.distplot(
+                    selection_row[selection_row['stroke'] == 0]['bmi'], color='green')
+                sns.distplot(
+                    selection_row[selection_row['stroke'] == 1]['bmi'], color='red')
+                plt.title('No Stroke vs Stroke by BMI', fontsize=15)
+                plt.xlim([10, 100])
+                st.pyplot(fig)
+            if chart == "Stroke by Age":
+                fig = plt.figure(figsize=(12, 10))
+                sns.distplot(
+                    selection_row[selection_row['stroke'] == 0]['age'], color='green')
+                sns.distplot(
+                    selection_row[selection_row['stroke'] == 1]['age'], color='red')
+                plt.title('No Stroke vs Stroke by Age', fontsize=15)
+                plt.xlim([18, 100])
+                st.pyplot(fig)
+
 
 # ---------- test your data
 st.header("Do you wanna try with you data ?")
