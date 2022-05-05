@@ -1,4 +1,3 @@
-from turtle import color
 import plotly.express as px
 from streamlit_echarts import st_echarts
 from sklearn.metrics import precision_score, recall_score
